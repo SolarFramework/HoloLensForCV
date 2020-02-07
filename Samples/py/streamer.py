@@ -1,7 +1,3 @@
-#from websocket import create_connection
-
-# ws = create_connection("ws://10.10.255.241")
-
 import websockets
 import asyncio
 import imutils
