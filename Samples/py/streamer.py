@@ -13,15 +13,18 @@ import time
 
 from reader import scaler, translater, getCube, renderPose
 
-camera_to_image = np.array( # flip axis for OpenCV camera model
-                        [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+camera_to_image = np.array(# flip axis for OpenCV camera model
+                           [[1, 0, 0, 0],
+                            [0, -1, 0, 0],
+                            [0, 0, -1, 0],
+                            [0, 0, 0, 1]])
 
 def getPose(frame_to_origin, viewMatrix, projMatrix):
     frame_to_origin = np.array(list(map(float, frame_to_origin.split(',')))).reshape(4,4).T
     viewMatrix = np.array(list(map(float, viewMatrix.split(',')))).reshape(4,4).T
     # projMatrix = np.array(list(map(float, projMatrix.split(',')))).reshape(4,4).T
 
-    if abs(np.linalg.det(frame_to_origin[:3,:3]) - 1) < 0.01:
+    if abs(np.linalg.det(frame_to_origin) - 1) < 0.01:
         return camera_to_image @ viewMatrix @ np.linalg.inv(frame_to_origin)
     return np.zeros((4,4))
 
@@ -45,7 +48,8 @@ async def streamData(websocket, path):
         if data['topic'] != '/hololens':
             continue
         stream = data['msg']
-        timestamp = stream['timestamp']
+        # timestamp = stream['timestamp']
+        # print(time.ctime(timestamp/1e7)[:-5])
         height = stream['height']
         width = stream['width']
         leftData = stream['left64']
@@ -56,7 +60,6 @@ async def streamData(websocket, path):
         rightF2O = stream['rightFrameToOrigin']
         rightViewMatrix = stream['rightCameraViewTransform']
         rightProjMatrix = stream['rightCameraProjectionTransform']
-        # print(time.ctime(timestamp/1e7)[:-5])
 
         # Left
         leftImg = readb64(leftData)
@@ -77,7 +80,6 @@ async def streamData(websocket, path):
         end = time.time()
         fps = (int) (1 / (end - begin))
 
-
 async def hello(websocket, path):
     count = 0
     while count < 3:
@@ -95,16 +97,9 @@ def readb64(base64_string):
     nparr = np.reshape(nparr, (480, 640, 1))
     return cv2.cvtColor(nparr, cv2.COLOR_GRAY2BGR)
 
-def readLog():
-    with open("log.txt", 'r') as logFile:
-        data = logFile.readlines()
-    frame = readb64(data[0])
-
-    cv2.imshow("oui", frame)
-    cv2.waitKey(0)
-
 if __name__ == "__main__":
-
     start_server = websockets.serve(hello, "10.10.254.226", 9090)
+    print("Serving socket on 10.10.254.226:9090")
+    print("Waiting for connection from the HoloLens...")
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

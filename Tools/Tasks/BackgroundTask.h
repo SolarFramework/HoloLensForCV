@@ -29,6 +29,7 @@ namespace Tasks
 		bool _holoLensMediaFrameSourceGroupStarted;
 		HoloLensForCV::SpatialPerception^ _spatialPerception;
 		HoloLensForCV::MultiFrameBuffer^ _multiFrameBuffer;
+		long long _deltaTmin;
 		
 		Windows::Foundation::IAsyncAction^ RunAsync();
 		concurrency::task<void> StreamAsync();
@@ -69,6 +70,10 @@ namespace Tasks
 		Windows::Foundation::Numerics::float4x4 GetCamToOrigin(HoloLensForCV::SensorFrame^ frame);
 		Windows::Foundation::Numerics::float4x4 GetAbsoluteCameraPose(HoloLensForCV::SensorFrame^ frame);
 		Windows::Foundation::Numerics::float4x4 GetCamToWorld(Windows::Foundation::Numerics::float4x4 pose);
+		Windows::Foundation::Numerics::float4x4 GetCamExtrinsics(HoloLensForCV::SensorFrame^ frame);
+		Windows::Foundation::Numerics::float4x4 GetCameraPerspectiveProjectionMatrix(HoloLensForCV::SensorFrame^ frame);
+
+		Platform::String^ matrixToString(Windows::Foundation::Numerics::float4x4 mat);
 
 		//ROS handling
 

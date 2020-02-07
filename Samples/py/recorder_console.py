@@ -196,7 +196,7 @@ class DevicePortalBrowser(object):
 def read_sensor_poses(path, identity_camera_to_image=False):
     poses = {}
     with open(path, "r") as fid:
-        header = fid.readline()
+        _ = fid.readline() # Header
         for line in fid:
             line = line.strip()
             if not line:
@@ -210,17 +210,16 @@ def read_sensor_poses(path, identity_camera_to_image=False):
             # the world to the camera coordinate system.
             frame_to_origin = np.array(list(map(float, elems[2:18])))
             frame_to_origin = frame_to_origin.reshape(4, 4).T
-            camera_to_frame = np.array(list(map(float, elems[18:34])))
-            camera_to_frame = camera_to_frame.reshape(4, 4).T
-            if abs(np.linalg.det(frame_to_origin[:3, :3]) - 1) < 0.01:
+            camViewMatrix = np.array(list(map(float, elems[18:34])))
+            camViewMatrix = camViewMatrix.reshape(4, 4).T
+            if abs(np.linalg.det(frame_to_origin) - 1) < 0.01:
                 if identity_camera_to_image:
                     camera_to_image = np.eye(4)
                 else:
                     camera_to_image = np.array(
                         [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-                poses[time_stamp] = np.dot(
-                    camera_to_image,
-                    np.dot(camera_to_frame, np.linalg.inv(frame_to_origin)))
+                poses[time_stamp] = \
+                     camera_to_image @ camViewMatrix @ np.linalg.inv(frame_to_origin)
     return poses
 
 
@@ -260,7 +259,7 @@ def synchronize_sensor_frames(args, recording_path, output_path, camera_names):
 
     ref_image_paths, ref_image_names, ref_time_stamps, ref_image_poses = \
         images[args.ref_camera_name]
-    ref_time_diffs = np.diff(ref_time_stamps)
+    _ = np.diff(ref_time_stamps)
     assert np.all(ref_time_stamps >= 0)
 
     time_per_frame = 10**7 / 30.0

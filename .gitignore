@@ -202,6 +202,12 @@ FakesAssemblies/
 # Visual Studio 6 workspace options file
 *.opt
 
+# Visual Studio Code user preferences
+.vscode/
+
+# Python cache
+__pycache__/
+
 # Custom ignores
 gallery.xml
 project.lock.json

@@ -38,7 +38,7 @@ namespace StreamerVLC
 
 		auto iter = BackgroundTaskRegistration::AllTasks->First();
 		auto hascur = iter->HasCurrent;
-
+		// Check if any background task still remains from previous instances of the app
 		while (hascur) {
 			auto cur = iter->Current->Value;
 			if (cur->Name == TaskName) {
@@ -49,6 +49,7 @@ namespace StreamerVLC
 
 			hascur = iter->MoveNext();
 		}
+		// Unregister any previous instances of the app
 		if (taskRegistered) {
 			
 					//
@@ -67,8 +68,8 @@ namespace StreamerVLC
 					taskRegistered = false;
 				
 		}
-
-		else if (!taskRegistered) {
+		// Register a brand new background task
+		{
 			auto builder = ref new BackgroundTaskBuilder();
 
 			builder->Name = TaskName;
@@ -87,8 +88,6 @@ namespace StreamerVLC
 				dbg::trace(L"Task triggered!");
 				dbg::trace(result.ToString()->Data());
 			});
-
-
 		}
 
 	}

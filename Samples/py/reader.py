@@ -1,22 +1,16 @@
 from cv2 import cv2
 import os
 import numpy as np
-import glob
-import shutil
-import argparse
-import matplotlib.pyplot as plt
 import imutils
 from recorder_console import parse_args, \
     mkdir_if_not_exists, read_sensor_images, \
     read_sensor_poses, synchronize_sensor_frames
-
 
 workspace_path = "C:/recordings"
 
 recording = "HoloLensRecording__2020_01_27__08_42_51"
 
 recording_path = os.path.join(workspace_path, recording)
-
 reconstruction_path = os.path.join(recording_path, "reconstruction")
 image_path = os.path.join(reconstruction_path, "images")
 
@@ -31,15 +25,9 @@ camera_params = { # fx, fy, cx, cy, k1, k2, p1, p2
                 "-0.000305 -0.013207 0.003258 0.001051",
     "vlc_rr": "450.301002 450.244147 320 240 "
                 "-0.010926 0.008377 -0.003105 -0.004976",
-    # "pv": "1.7230957099738822e+04 1.7230957099738822e+04 7.035e+02 3.955e+02 "
-    #             "0 0 0 0", # TODO Check values
     "pv": "3124.6464 3122.8344 86.555904 64.628136 "
                 "0 0 0 0", # TODO Check values
 }
-[[3.76120520, -0.00500542345, 0.0566976666,            0],
- [         0,     6.65095186, 0.0159159899,            0],
- [         0,              0,  -1.00502515, -0.100502513],
- [         0,              0,           -1,            0]]
 
 scaler = lambda s: np.array([[s, 0, 0, 0],
                              [0, s, 0, 0],
@@ -64,10 +52,7 @@ def getCube(pos, scale):
 
 def getCameraParams(camera_name):
     ''' Returns the intrinsic camera parameters matrix '''
-    # try:
     camera_params_list = list(map(float, camera_params[camera_name].split()))
-    # except:
-    #     return np.identity(4)
     fx, fy, cx, cy, _, _, _, _ = np.array(camera_params_list, dtype=np.double)
     K = np.array([[fx,  0, cx, 0],
                   [ 0, fy, cy, 0],
@@ -80,28 +65,12 @@ def renderPose(img, pose, camera_name, height, width, cube):
     P = K @ pose # @ is matrix multiplication (numpy)
     for p in cube:
         uv = P @ p
+        if uv[2] == 0: continue
         u, v = uv[0]/uv[2], uv[1]/uv[2]
         if 0 <= u and u <= height and 0 <= v and v <= width:
             cv2.circle(img, (u, v), 10, (0,255,0), -1)
     return img
-
-def merge(time_stamps, camera_names): # WIP, not useful for now
-    indexes = {}
-    for cam in camera_names:
-        indexes[cam] = 0
-    ref_cam = camera_names[0]
-    global_time_stamps = []
-    done = False
-    while not done:
-        ref_time_stamp = time_stamps[ref_cam][indexes[0]]
-        global_time_stamps.append(ref_time_stamp)
-        for cam in camera_names[1:]:
-            cam_time_stamp = time_stamps[cam][indexes[cam]]
-            if ref_time_stamp == cam_time_stamp:
-                indexes[cam] += 1
-            elif ref_time_stamp > cam_time_stamp:
-                global_time_stamps.append(cam_time_stamp)
-                    
+      
 #################################################################################
 
 if __name__ == "__main__":
@@ -129,18 +98,16 @@ if __name__ == "__main__":
     # Draw Sample
     cube = getCube([0.2, 0, -.75], 0.1)
 
-    # cube = list(map(lambda p: np.add(p, translater(0.5, -0.5, -1)), cube))
-
-    ## vlc cameras
+    # Looping through frames
     for id in range(len(frames)):
         frame = frames[id]
         pose = poses[id]
-        # proj = projs[id]
 
         if len(frame) == 0:
             continue
 
         final = np.zeros((camera_width, 0, 3), np.uint8)
+        # Looping through sensors
         for l in range(len(camera_names)):
             try:
                 img = cv2.imread(os.path.join(image_path, frame[l]))

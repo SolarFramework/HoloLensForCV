@@ -19,7 +19,7 @@ import sys
 import binascii
 import struct
 from collections import namedtuple
-import cv2
+from cv2 import cv2
 import numpy as np
 
 PROCESS = True
