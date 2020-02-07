@@ -1,8 +1,8 @@
 # StereoStreamer branch
 
-This branch is originated from this [fork](https://github.com/argo-1/HoloLensForCV). It modifies the StreamerVLC sample to stream synchronized sensor frames and poses through a websocket, for further processing on another device. The app can in run in the background, meaning that you can gather sensor data from the HoloLens when using any application on the device.
+This branch is originated from this [fork](https://github.com/argo-1/HoloLensForCV/tree/StereoStreamer). It modifies the StreamerVLC sample to stream synchronized sensor frames and poses through a websocket, for further processing on another device. The app can in run in the background, meaning that you can gather sensor data from the HoloLens when using any application on the device.
 
-Examples for fetching the sensors data are provided in [Samples/py](https://github.com/Minipeps/HoloLensForCV/tree/master/Samples/py).
+Examples for fetching the sensors data are provided in [Samples/py](https://github.com/Minipeps/HoloLensForCV/tree/StereoStreamer/Samples/py).
 
 # Purpose
 
