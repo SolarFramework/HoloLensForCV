@@ -1,17 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Resources">
-      <UniqueIdentifier>5331142e-9a64-41b1-8329-5b4b67b80be6</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="protos">
+      <UniqueIdentifier>{0bb00a87-0dce-4c2c-bc08-34e5b24b37fc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="BackgroundTask.cpp" />
+    <ClCompile Include="ServerGRPC.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="BackgroundTask.h" />
+    <ClInclude Include="ServerGRPC.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="protos\SensorStreaming.proto">
+      <Filter>protos</Filter>
+    </None>
   </ItemGroup>
 </Project>

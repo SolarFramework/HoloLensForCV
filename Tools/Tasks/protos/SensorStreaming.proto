@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "solar.sensorStreaming";
+option java_outer_classname = "SensorStreamingProto";
+option objc_class_prefix = "STR";
+
+package sensorStreaming;
+
+// Interface exported by the server
+service Streamer
+{
+    // Get camera intrinsics parameters from the server
+    rpc GetCamIntrinsics(NameRPC) returns (CameraIntrinsicsRPC) {}
+    // Receive sensors data as a stream
+    rpc SensorStream(NameRPC) returns (stream SensorFrameRPC) {}
+}
+
+message NameRPC
+{
+    string cameraName = 1;
+}
+
+message CameraIntrinsicsRPC
+{
+    float fx = 1;
+    float fy = 2;
+    float cx = 3;
+    float cy = 4;
+}
+
+message PoseRPC
+{
+    float m11 = 1;
+    float m12 = 2;
+    float m13 = 3;
+    float m14 = 4;
+    float m21 = 5;
+    float m22 = 6;
+    float m23 = 7;
+    float m24 = 8;
+    float m31 = 9;
+    float m32 = 10;
+    float m33 = 11;
+    float m34 = 12;
+    float m41 = 13;
+    float m42 = 14;
+    float m43 = 15;
+    float m44 = 16;
+}
+
+message ImageRPC
+{
+    int32 width = 1;
+    int32 height = 2;
+    bytes data = 3;
+}
+
+message SensorFrameRPC
+{
+    ImageRPC image = 1;
+    PoseRPC pose = 2;
+}

@@ -170,11 +170,13 @@
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)Shared/Debugging/Include;$(SolutionDir)Shared/Io/Include;$(SolutionDir)Shared/Rendering/Include;$(SolutionDir)Shared/Holographic/Include;$(SolutionDir)Shared/Graphics/Include;$(SolutionDir)packages\Eigen.3.3.3\build\native\include;$(SolutionDir)\..\..\Libraries\cpp-base64\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mpapin\.remaken\packages\thirdParties\win-cl-14.1\grpc\1.27.1\interfaces;$(SolutionDir)Shared/Debugging/Include;$(SolutionDir)Shared/Io/Include;$(SolutionDir)Shared/Rendering/Include;$(SolutionDir)Shared/Holographic/Include;$(SolutionDir)Shared/Graphics/Include;$(SolutionDir)packages\Eigen.3.3.3\build\native\include;$(SolutionDir)\..\..\Libraries\cpp-base64\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>C:\Users\mpapin\.remaken\packages\thirdParties\win-cl-14.1\grpc\1.27.1\lib\x86\shared\release;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\mpapin\.remaken\packages\thirdParties\win-cl-14.1\grpc\1.27.1\lib\x86\shared\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
@@ -270,6 +272,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="BackgroundTask.h" />
+    <ClInclude Include="ServerGRPC.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -283,6 +286,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="BackgroundTask.cpp" />
+    <ClCompile Include="ServerGRPC.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\Debugging\Debugging.vcxproj">
@@ -297,6 +301,9 @@
     <ProjectReference Include="..\..\Shared\OpenCVHelpers\OpenCVHelpers.vcxproj">
       <Project>{940a6d80-0775-4272-84c9-1585c4757071}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="protos\SensorStreaming.proto" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
