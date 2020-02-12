@@ -211,3 +211,7 @@ __pycache__/
 # Custom ignores
 gallery.xml
 project.lock.json
+
+# Protobuffer generated files
+*.pb.cc
+*.pb.h
