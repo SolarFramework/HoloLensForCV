@@ -25,11 +25,11 @@ using namespace Windows::Globalization::DateTimeFormatting;
 
 
 namespace Tasks {
-static int count = 0;
 static long long s_previousTimestamp = 0;
 static int id;
 static int pubCount;
 static bool connected = false;
+static const float c_timestampTolerance = 0.001f;
 
 static const std::string base64_chars =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -83,7 +83,6 @@ void BackgroundTask::Run(IBackgroundTaskInstance^ taskInstance)
 			concurrency::create_task(BackgroundTask::RunAsync()).then([&]()
 			{
 				pairingInProgress = false;
-				count++;
 			});
 		}	
 	}
@@ -158,7 +157,6 @@ concurrency::task<void> BackgroundTask::StreamAsync()
 		Concurrency::task_from_result();
 
 	pairingInProgress = true;
-	const float c_timestampTolerance = 0.001f;
 
 	auto commonTime = _multiFrameBuffer->GetTimestampForSensorPair(
 		HoloLensForCV::SensorType::VisibleLightLeftFront,
