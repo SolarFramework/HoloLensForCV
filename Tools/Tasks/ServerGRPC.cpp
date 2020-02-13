@@ -7,9 +7,91 @@
 using sensorStreaming::Streamer;
 using sensorStreaming::NameRPC;
 using sensorStreaming::CameraIntrinsicsRPC;
+using sensorStreaming::MatRPC;
 using sensorStreaming::PoseRPC;
 using sensorStreaming::ImageRPC;
 using sensorStreaming::SensorFrameRPC;
+
+ImageRPC & MakeImageRPC(Windows::Graphics::Imaging::SoftwareBitmap^ bitmap)
+{
+	ImageRPC imageRPC;
+	imageRPC.set_height(bitmap->PixelHeight);
+	imageRPC.set_width(bitmap->PixelWidth);
+	Windows::Storage::Streams::Buffer^ buffer;
+	bitmap->CopyToBuffer(buffer);
+	imageRPC.set_data(reinterpret_cast<char*>(buffer));
+
+	return imageRPC;
+}
+
+MatRPC & MakeMatRPC(Windows::Foundation::Numerics::float4x4 & mat)
+{
+	MatRPC matRPC;
+	matRPC.set_m11(mat.m11);
+	matRPC.set_m12(mat.m12);
+	matRPC.set_m13(mat.m13);
+	matRPC.set_m14(mat.m14);
+	matRPC.set_m21(mat.m21);
+	matRPC.set_m22(mat.m22);
+	matRPC.set_m23(mat.m23);
+	matRPC.set_m24(mat.m24);
+	matRPC.set_m31(mat.m31);
+	matRPC.set_m32(mat.m32);
+	matRPC.set_m33(mat.m33);
+	matRPC.set_m34(mat.m34);
+	matRPC.set_m41(mat.m41);
+	matRPC.set_m42(mat.m42);
+	matRPC.set_m43(mat.m43);
+	matRPC.set_m44(mat.m44);
+
+	return matRPC;
+}
+
+PoseRPC & MakePoseRPC(HoloLensForCV::SensorFrame^ sensorFrame)
+{
+	PoseRPC pose;
+	pose.set_allocated_cameraproj(&MakeMatRPC(sensorFrame->CameraProjectionTransform));
+	pose.set_allocated_cameraview(&MakeMatRPC(sensorFrame->CameraViewTransform));
+	pose.set_allocated_frametoorigin(&MakeMatRPC(sensorFrame->FrameToOrigin));
+
+	return pose;
+}
+
+SensorFrameRPC MakeSensorFrameRPC(HoloLensForCV::SensorFrame^ sensorFrame)
+{
+	SensorFrameRPC sensorFrameRPC;
+	sensorFrameRPC.set_allocated_image(&MakeImageRPC(sensorFrame->SoftwareBitmap));
+	sensorFrameRPC.set_allocated_pose(&MakePoseRPC(sensorFrame));
+	return sensorFrameRPC;
+}
+
+HoloLensForCV::SensorType ParseNameRPC(const NameRPC* name)
+{
+	if (name->cameraname() == "pv")
+	{
+		return HoloLensForCV::SensorType::PhotoVideo;
+	}
+	if (name->cameraname() == "vlc_ll")
+	{
+		return HoloLensForCV::SensorType::VisibleLightLeftLeft;
+	}
+	if (name->cameraname() == "vlc_lf")
+	{
+		return HoloLensForCV::SensorType::VisibleLightLeftFront;
+	}
+	if (name->cameraname() == "vlc_rf")
+	{
+		return HoloLensForCV::SensorType::VisibleLightRightFront;
+	}
+	if (name->cameraname() == "vlc_rr")
+	{
+		return HoloLensForCV::SensorType::VisibleLightRightRight;
+	}
+	dbg::trace(L"Invalid of unsupported sensor.");
+	return HoloLensForCV::SensorType::Undefined;
+}
+
+std::vector<HoloLensForCV::SensorFrame^> sensorFrames;
 
 class StreamerServiceImpl final : public Streamer::Service
 {
@@ -30,13 +112,19 @@ class StreamerServiceImpl final : public Streamer::Service
 		const NameRPC* camera_name,
 		grpc::ServerWriter<SensorFrameRPC>* writer) override
 	{
-		return grpc::Status::OK;
+		for (const auto sensorFrame : sensorFrames)
+		{
+			if (sensorFrame->FrameType == ParseNameRPC(camera_name))
+			{
+				writer->Write(MakeSensorFrameRPC(sensorFrame));
+				return grpc::Status::OK;
+			}
+		}
+		return grpc::Status::CANCELLED;
 	}
 };
 
 namespace Tasks {
-
-std::vector<HoloLensForCV::SensorFrame^> sensorFrames;
 
 Tasks::ServerGRPC::ServerGRPC()
 {

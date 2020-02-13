@@ -9,6 +9,8 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="BackgroundTask.cpp" />
     <ClCompile Include="ServerGRPC.cpp" />
+    <ClCompile Include="build\sensorStreaming.grpc.pb.cc" />
+    <ClCompile Include="build\sensorStreaming.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

@@ -29,7 +29,7 @@ message CameraIntrinsicsRPC
     float cy = 4;
 }
 
-message PoseRPC
+message MatRPC
 {
     float m11 = 1;
     float m12 = 2;
@@ -47,6 +47,13 @@ message PoseRPC
     float m42 = 14;
     float m43 = 15;
     float m44 = 16;
+}
+
+message PoseRPC
+{
+    MatRPC cameraProj = 1;
+    MatRPC cameraView = 2;
+    MatRPC frameToOrigin = 3;
 }
 
 message ImageRPC
