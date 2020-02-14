@@ -142,6 +142,7 @@ Tasks::ServerGRPC::ServerGRPC()
 
 	m_mediaFrameSourceGroupStarted = false;
 	m_isRunning = false;
+	m_inProcess = false;
 	m_processedFrames = 0;
 }
 
@@ -149,21 +150,27 @@ void Tasks::ServerGRPC::Run(IBackgroundTaskInstance ^ taskInstance)
 {
 	if (!m_isRunning)
 	{
-		StartHoloLensMediaFrameSourceGroup();
 		Serve();
 	}
-	m_server->Wait();
+	if (!m_mediaFrameSourceGroupStarted)
+	{
+		StartHoloLensMediaFrameSourceGroup();
+	}
 
 	// Main background loop to update sensors data
 	while (m_isRunning)
 	{
-		Concurrency::create_task(StreamAsync()).then(
-			[&]()
-			{
-				m_processedFrames++;
-				if (m_processedFrames % 10 == 0)
-					dbg::trace(L"Number of processed frames so far: %i", m_processedFrames);
-			});
+		if (!m_inProcess)
+		{
+			Concurrency::create_task(StreamAsync()).then(
+				[&]()
+				{
+					if (m_processedFrames % 10 == 0)
+						dbg::trace(L"Number of processed frames so far: %i", m_processedFrames);
+					m_processedFrames++;
+					m_inProcess = false;
+				});
+		}
 	}
 }
 
@@ -179,14 +186,15 @@ void Tasks::ServerGRPC::Serve()
 	// Server is up
 	dbg::trace(L"Server listening on %s", m_serverAddress);
 	m_isRunning = true;
+	//m_server->Wait();
 }
 
 void Tasks::ServerGRPC::Stop()
 {
 	if (m_isRunning)
 	{
-		m_server->Shutdown();
 		m_isRunning = false;
+		m_server->Shutdown();
 	}
 }
 
@@ -195,6 +203,8 @@ Concurrency::task<void> ServerGRPC::StreamAsync()
 	dbg::TimerGuard timerGuard(
 		L"ServerGRPC::StreamAsync",
 		30.0 /* minimum_time_elapsed_in_milliseconds */);
+	
+	m_inProcess = true;
 
 	Concurrency::task<void> streamTask = Concurrency::task_from_result();
 

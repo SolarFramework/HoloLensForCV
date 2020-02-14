@@ -51,7 +51,7 @@ message MatRPC
 
 message PoseRPC
 {
-    MatRPC cameraProj = 1;
+    MatRPC cameraProj = 1; // Only available for PV sensor on HoloLens (v1)
     MatRPC cameraView = 2;
     MatRPC frameToOrigin = 3;
 }

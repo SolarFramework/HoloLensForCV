@@ -36,6 +36,7 @@ private:
 	HoloLensForCV::SpatialPerception^ m_spatialPerception;
 	std::vector<HoloLensForCV::SensorType> m_enabledSensorTypes;
 
+	bool m_inProcess;
 	int m_processedFrames;
 };
 
