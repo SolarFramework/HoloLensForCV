@@ -30,49 +30,45 @@ namespace StreamerVLC
 {
 	void AppMain::InitializeBackgroundStreamer() { // Refer to Windows Universal Samples for UWP apps, segment on Background Tasks
 
-		Platform::String^ TaskName = "BackgroundTask";
+		Platform::String^ TaskName = "ServerGRPC";
 
-		//auto task = 
 		BackgroundExecutionManager::RequestAccessAsync();
 
 		auto iter = BackgroundTaskRegistration::AllTasks->First();
 		auto hascur = iter->HasCurrent;
 		// Check if any background task still remains from previous instances of the app
-		while (hascur) {
+		while (hascur)
+		{
 			auto cur = iter->Current->Value;
-			if (cur->Name == TaskName) {
+			if (cur->Name == TaskName)
+			{
 				taskRegistered = true;
 				dbg::trace(L"Background Task already still registered!");
 				break;
 			}
-
 			hascur = iter->MoveNext();
 		}
 		// Unregister any previous instances of the app
-		if (taskRegistered) {
-			
-					//
-					// Loop through all ungrouped background tasks and unregister any with the name passed into this function.
-					//
-					for (auto pair : BackgroundTaskRegistration::AllTasks)
-					{
-						auto task = pair->Value;
-						if (task->Name == TaskName)
-						{
-							task->Unregister(true);
-						}
-					}
-
-					dbg::trace(L"Background Task deregistered!");
-					taskRegistered = false;
-				
+		if (taskRegistered)
+		{
+			// Loop through all ungrouped background tasks and unregister any with the name passed into this function.
+			for (auto pair : BackgroundTaskRegistration::AllTasks)
+			{
+				auto task = pair->Value;
+				if (task->Name == TaskName)
+				{
+					task->Unregister(true);
+				}
+			}
+			dbg::trace(L"Background Task deregistered!");
+			taskRegistered = false;
 		}
 		// Register a brand new background task
 		{
 			auto builder = ref new BackgroundTaskBuilder();
 
 			builder->Name = TaskName;
-			builder->TaskEntryPoint = "Tasks.BackgroundTask";
+			builder->TaskEntryPoint = "Tasks.ServerGRPC";
 			
 			ApplicationTrigger^ trigger = ref new ApplicationTrigger();
 			builder->SetTrigger(trigger);
@@ -88,7 +84,6 @@ namespace StreamerVLC
 				dbg::trace(result.ToString()->Data());
 			});
 		}
-
 	}
 
 	// Loads and initializes application assets when the application is loaded.

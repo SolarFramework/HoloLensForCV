@@ -3,6 +3,8 @@
 #include "grpc/grpc.h"
 #include <grpcpp/grpcpp.h>
 
+#include "StreamerServiceImpl.h"
+
 using namespace Windows::ApplicationModel::Background;
 
 namespace Tasks {
@@ -14,21 +16,21 @@ public:
 	
 	virtual void Run(IBackgroundTaskInstance^ taskInstance);
 
-	//HoloLensForCV::SensorType FromStringNameToSensorType(std::string sensorName);
 private:
-	// gRPC handling
+	// gRPC Server
 	void Serve();
+
 	void Stop();
 
-	grpc::ServerBuilder m_serverBuilder;
-	std::unique_ptr<grpc::Server> m_server;
+	Windows::Foundation::IAsyncAction^ HandleRpcAsync();
 
-	std::string m_serverAddress;
+	StreamerServiceImpl m_streamerService;
 	bool m_isRunning;
 
-	// HoloLens streaming
+	// HoloLens sensor streaming
 	Concurrency::task<void> StreamAsync();
 	void StartHoloLensMediaFrameSourceGroup();
+
 	HoloLensForCV::MediaFrameSourceGroupType m_mediaFrameSourceGroupType;
 	HoloLensForCV::MediaFrameSourceGroup^ m_mediaFrameSourceGroup;
 	bool m_mediaFrameSourceGroupStarted;
@@ -36,9 +38,12 @@ private:
 	HoloLensForCV::SpatialPerception^ m_spatialPerception;
 	std::vector<HoloLensForCV::SensorType> m_enabledSensorTypes;
 
+	// Sensors data
+	std::vector<HoloLensForCV::SensorFrame^> m_sensorFrames;
+
 	bool m_inProcess;
 	int m_processedFrames;
+	bool m_handingRpcs;
 };
-
 }
 

@@ -18,12 +18,13 @@ def getIntrinsics(stub):
 
 def streamSensors(stub, camera_name):
     reader = stub.SensorStream(makeNameRPC(camera_name))
-
+    print("Reader...")
     for sensorFrame in reader:
+        print("frame:")
         print(sensorFrame)
 
 if __name__ == '__main__':
     logging.basicConfig()
     stub = connect()
     getIntrinsics(stub)
-    # streamSensors(stub, "vlc_lf")
+    streamSensors(stub, "vlc_lf")

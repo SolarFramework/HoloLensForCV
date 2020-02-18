@@ -67,4 +67,5 @@ message SensorFrameRPC
 {
     ImageRPC image = 1;
     PoseRPC pose = 2;
+    double timestamp = 3;
 }
