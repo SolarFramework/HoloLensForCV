@@ -4,13 +4,42 @@
 
 ImageRPC MakeImageRPC(Windows::Graphics::Imaging::SoftwareBitmap^ bitmap)
 {
+	// Bitmap to buffer data
+	Windows::Graphics::Imaging::BitmapBuffer^ bitmapBuffer =
+		bitmap->LockBuffer(Windows::Graphics::Imaging::BitmapBufferAccessMode::Read);
+	Windows::Foundation::IMemoryBufferReference^ bitmapBufferRef =
+		bitmapBuffer->CreateReference();
+	uint32_t bitmapBufferDataSize = 0;
+	uint8_t* bitmapBufferData =
+		Io::GetTypedPointerToMemoryBuffer<uint8_t>(
+			bitmapBufferRef,
+			bitmapBufferDataSize);
+	// Pixel format handling
+	int32_t pixelStride;
+	switch (bitmap->BitmapPixelFormat)
+	{
+	case Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8:
+		pixelStride = 4;
+		break;
+	case Windows::Graphics::Imaging::BitmapPixelFormat::Gray16:
+		pixelStride = 2;
+		break;
+	case Windows::Graphics::Imaging::BitmapPixelFormat::Gray8:
+		pixelStride = 1;
+		break;
+	default:
+		dbg::trace(L"Unrecognized pixel format, assuming 1 byte per pixel.");
+		pixelStride = 1;
+		break;
+	}
+	int32_t imageBufferSize = bitmap->PixelHeight * bitmap->PixelWidth * pixelStride;
+	ASSERT(imageBufferSize == (int32_t)bitmapBufferDataSize);
+
 	ImageRPC imageRPC;
 	imageRPC.set_height(bitmap->PixelHeight);
-	imageRPC.set_width(bitmap->PixelWidth);
-	//Windows::Storage::Streams::Buffer^ buffer;
-	//bitmap->CopyToBuffer(buffer);
-	//imageRPC.set_data(reinterpret_cast<char*>(buffer));
-	// TODO fix bitmap->bytes conversion
+	imageRPC.set_width(bitmap->PixelWidth * pixelStride);
+
+	imageRPC.mutable_data()->append(reinterpret_cast<char*>(bitmapBufferData));
 
 	return imageRPC;
 }
