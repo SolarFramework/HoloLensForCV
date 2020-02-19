@@ -215,3 +215,5 @@ project.lock.json
 # Protobuffer generated files
 *.pb.cc
 *.pb.h
+*_pb2_grpc.py
+*_pb2.py
