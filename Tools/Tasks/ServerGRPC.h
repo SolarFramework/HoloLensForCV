@@ -22,13 +22,12 @@ private:
 
 	void Stop();
 
-	Windows::Foundation::IAsyncAction^ HandleRpcAsync();
+	void StreamAsync();
 
 	StreamerServiceImpl m_streamerService;
 	bool m_isRunning;
 
 	// HoloLens sensor streaming
-	Concurrency::task<void> StreamAsync();
 	void StartHoloLensMediaFrameSourceGroup();
 
 	HoloLensForCV::MediaFrameSourceGroupType m_mediaFrameSourceGroupType;

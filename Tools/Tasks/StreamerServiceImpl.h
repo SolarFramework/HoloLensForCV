@@ -15,6 +15,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCompletionQueue;
 using sensorStreaming::Streamer;
+using sensorStreaming::SensorListRPC;
 using sensorStreaming::NameRPC;
 using sensorStreaming::MatRPC;
 using sensorStreaming::CameraIntrinsicsRPC;
@@ -22,7 +23,8 @@ using sensorStreaming::PoseRPC;
 using sensorStreaming::ImageRPC;
 using sensorStreaming::SensorFrameRPC;
 
-enum RequestType { INTRINSICS, SENSORSTREAM };
+enum RequestType { ENABLE, INTRINSICS, SENSORSTREAM };
+enum CallStatus { CREATE, PROCESS, FINISH };
 
 class StreamerServiceImpl final
 {
@@ -31,7 +33,7 @@ public:
 
 	void Run();
 
-	Concurrency::task<void> HandleRpcs(std::vector<HoloLensForCV::SensorFrame^> sensorFrames);
+	void HandleRpcs(std::vector<HoloLensForCV::SensorFrame^> sensorFrames);
 
 private:
 	std::unique_ptr<ServerCompletionQueue> m_cq;
@@ -39,17 +41,18 @@ private:
 	std::unique_ptr<Server> m_server;
 };
 
+
 class CallData
 {
 public:
 	CallData(Streamer::AsyncService* service, ServerCompletionQueue* cq, RequestType rt) :
 		m_service(service),
 		m_cq(cq),
+		m_responderEnable(&m_context),
 		m_responderIntrinsics(&m_context),
 		m_writerSensorStreaming(&m_context),
 		m_status(CREATE),
-		m_type(rt),
-		m_count(0)
+		m_type(rt)
 	{
 		Proceed();
 	}
@@ -61,24 +64,28 @@ public:
 		m_sensorFrames = sensorFrames;
 	}
 
+	CallStatus getStatus() { return m_status; }
+
+	RequestType getType() { return m_type;  }
+
 private:
 	Streamer::AsyncService* m_service;
 	ServerCompletionQueue* m_cq;
 	ServerContext m_context;
 
+	SensorListRPC m_enableRequest;
 	NameRPC m_sensorRequest;
 	CameraIntrinsicsRPC m_replyIntrinsics;
 	SensorFrameRPC m_replySensorStreaming;
 
 	ServerAsyncResponseWriter<CameraIntrinsicsRPC> m_responderIntrinsics;
 	ServerAsyncWriter<SensorFrameRPC> m_writerSensorStreaming;
+	ServerAsyncResponseWriter<SensorListRPC> m_responderEnable;
 
 	grpc::WriteOptions m_writeOptions;
 
-	enum CallStatus { CREATE, PROCESS, FINISH };
 	CallStatus m_status;
 	RequestType m_type;
 
 	std::vector<HoloLensForCV::SensorFrame^> m_sensorFrames;
-	int m_count;
 };

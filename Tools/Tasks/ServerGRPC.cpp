@@ -37,28 +37,9 @@ void ServerGRPC::Run(IBackgroundTaskInstance ^ taskInstance)
 	// Main background loop to update sensors data
 	while (m_isRunning)
 	{
-		// Update sensors data
-		if (!m_inProcess)
-		{
-			Concurrency::create_task(StreamAsync()).then(
-				[&]()
-				{
-					m_inProcess = false;
-					if (m_processedFrames % 1 == 0)
-						dbg::trace(L"Number of processed frames so far: %i", m_processedFrames);
-					m_processedFrames++;
-				});
-		}
-		// Handle RPC requests here
-		if (!m_handingRpcs)
-		{
-			Concurrency::create_task(HandleRpcAsync()).then(
-				[&]()
-				{
-					m_handingRpcs = false;
-					dbg::trace(L"Handled Completion queue");
-				});
-		}
+		// Update sensors data for the gRPC app
+		StreamAsync();
+		m_streamerService.HandleRpcs(m_sensorFrames);
 	}
 }
 
@@ -74,17 +55,7 @@ void ServerGRPC::Stop()
 		m_isRunning = false;
 }
 
-Windows::Foundation::IAsyncAction^ ServerGRPC::HandleRpcAsync()
-{
-	m_handingRpcs = true;
-	return Concurrency::create_async(
-		[&]()
-		{
-			return m_streamerService.HandleRpcs(m_sensorFrames);
-		});
-}
-
-Concurrency::task<void> ServerGRPC::StreamAsync()
+void ServerGRPC::StreamAsync()
 {
 	dbg::TimerGuard timerGuard(
 		L"ServerGRPC::StreamAsync",
@@ -92,10 +63,8 @@ Concurrency::task<void> ServerGRPC::StreamAsync()
 	
 	m_inProcess = true;
 
-	Concurrency::task<void> streamTask = Concurrency::task_from_result();
-
 	if (!m_mediaFrameSourceGroupStarted)
-		return streamTask;
+		return;
 
 	m_sensorFrames.clear();
 	int count = 0;
@@ -105,13 +74,13 @@ Concurrency::task<void> ServerGRPC::StreamAsync()
 		auto frame = m_multiFrameBuffer->GetLatestFrame(sensorType);
 		if (frame == nullptr)
 		{
-			dbg::trace(L"Frame is null for sensor %s", sensorType.ToString());
+			dbg::trace(L"Frame is null for sensor %s", sensorType.ToString()->Data());
 			continue; // Skip this frame's processing, sensor not available
 		}
 		count++;
 		m_sensorFrames.push_back(frame);
 	}
-	return streamTask;
+	return;
 }
 
 void ServerGRPC::StartHoloLensMediaFrameSourceGroup()

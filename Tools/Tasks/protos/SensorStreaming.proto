@@ -10,10 +10,18 @@ package sensorStreaming;
 // Interface exported by the server
 service Streamer
 {
+    // Enable sensors listed in message,
+    // returns the list of successfully enabled sensors
+    rpc EnableSensors(SensorListRPC) returns (SensorListRPC);
     // Get camera intrinsics parameters from the server
     rpc GetCamIntrinsics(NameRPC) returns (CameraIntrinsicsRPC) {}
     // Receive sensors data as a stream
     rpc SensorStream(NameRPC) returns (stream SensorFrameRPC) {}
+}
+
+message SensorListRPC
+{
+    repeated NameRPC list = 1;
 }
 
 message NameRPC
