@@ -21,7 +21,7 @@ service Streamer
 
 message SensorListRPC
 {
-    repeated NameRPC list = 1;
+    repeated NameRPC sensor = 1;
 }
 
 message NameRPC
