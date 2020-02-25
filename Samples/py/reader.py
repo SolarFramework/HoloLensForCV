@@ -65,9 +65,10 @@ def renderPose(img, pose, camera_name, height, width, cube):
     P = K @ pose # @ is matrix multiplication (numpy)
     for p in cube:
         uv = P @ p
-        if uv[2] == 0: continue
-        u, v = uv[0]/uv[2], uv[1]/uv[2]
+        if uv[2][0] == 0: continue
+        u, v = int(uv[0][0]/uv[2][0]), int(uv[1][0]/uv[2][0])
         if 0 <= u and u <= height and 0 <= v and v <= width:
+            print(u,v)
             cv2.circle(img, (u, v), 10, (0,255,0), -1)
     return img
       

@@ -1,5 +1,6 @@
 import grpc
 import logging
+import imutils
 import numpy as np
 from cv2 import cv2
 import base64
@@ -8,6 +9,25 @@ import time
 
 import SensorStreaming_pb2
 import SensorStreaming_pb2_grpc
+
+from reader import renderPose, getCube
+
+def getPose(cameraView, frameToOrigin):
+    camera_to_image = np.array(# flip axis for OpenCV camera model
+                           [[1, 0, 0, 0],
+                            [0, -1, 0, 0],
+                            [0, 0, -1, 0],
+                            [0, 0, 0, 1]])
+    
+    if abs(np.linalg.det(frameToOrigin) - 1) < 0.01:
+        return camera_to_image @ cameraView @ np.linalg.inv(frameToOrigin)
+    return np.zeros((4,4))
+
+def parseMatRPC(m):
+    return np.array([[m.m11, m.m21, m.m31, m.m41],
+                     [m.m12, m.m22, m.m32, m.m42],
+                     [m.m13, m.m23, m.m33, m.m43],
+                     [m.m14, m.m24, m.m34, m.m44]])
 
 def makeNameRPC(camera_name):
     return SensorStreaming_pb2.NameRPC(cameraName=camera_name)
@@ -37,25 +57,48 @@ def streamSensors(stub, camera_name):
     print("Reader...")
     return reader
 
-def process(reader):
+def process(reader, cube):
+    fps = 25
     for sensorFrame in reader:
-        print("frame:")
-        print(sensorFrame.image.width)
-        print(sensorFrame.image.height)
-        print(sensorFrame.pose)
+        # print("frame:")
+        # print(sensorFrame.image.width)
+        # print(sensorFrame.image.height)
+        # print(sensorFrame.pose)
+        width = sensorFrame.image.width
+        height = sensorFrame.image.height
+        cameraView = parseMatRPC(sensorFrame.pose.cameraView)
+        frameToOrigin = parseMatRPC(sensorFrame.pose.frameToOrigin)
+        pose = getPose(cameraView, frameToOrigin)
+        print("cameraView\n", cameraView)
+        print("frameToOrigin\n", frameToOrigin)
+        print("pose\n", pose)
+        img = createImg(width, height, sensorFrame.image.data)
+        img = renderPose(img, pose, "vlc_lf", height, width, cube)
+        img = imutils.rotate_bound(img, 90)
+        cv2.imshow("Pose Rendering", img)
+        cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 def readb64(base64_string):
     nparr = np.frombuffer(base64_string, np.uint8)
     nparr = np.reshape(nparr, (480, 640, 1))
     return cv2.cvtColor(nparr, cv2.COLOR_GRAY2BGR)
 
+def createImg(width, height, data):
+    # nparr = np.frombuffer(bytes(data), np.uint8)
+    # return np.reshape(nparr, (height, width, 3))
+    return np.zeros((width, height, 3), np.uint8)    
+
 if __name__ == '__main__':
     logging.basicConfig()
+
+    cube = getCube([0.2, 0, -.75], 0.1)
+
     stub = connect()
     # enable(["vlc_lf", "vlc_rf"])
     getIntrinsics(stub, "vlc_lf")
     reader = streamSensors(stub, "vlc_lf")
-    process(reader)
+    process(reader, cube)
 
     # with open("log.txt", 'r') as f:
     #     data = f.read()
