@@ -189,7 +189,7 @@ void ServerGRPC::HandleRpcs()
 	void* tag;
 	bool ok;
 	// Check completion queue status for any pending request
-	dbg::trace(L"Waiting for next event un completion queue...");
+	dbg::trace(L"Waiting for next event in completion queue...");
 	GPR_ASSERT(m_cq->Next(&tag, &ok));
 	GPR_ASSERT(ok);
 	CallData* cd = static_cast<CallData*>(tag);
@@ -247,7 +247,7 @@ void ServerGRPC::Proceed(CallData * cd)
 		else if (type == SENSORSTREAM)
 		{
 			
-			if (!m_mediaFrameSourceGroup)
+			if (!m_mediaFrameSourceGroupStarted)
 			{
 				cd->setStatus(FINISH);
 				cd->m_writerSensorStreaming.Finish(grpc::Status::CANCELLED, cd);
