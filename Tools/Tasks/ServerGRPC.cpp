@@ -123,14 +123,14 @@ ServerGRPC::ServerGRPC()
 	m_enabledSensorTypes.emplace_back(
 		HoloLensForCV::SensorType::VisibleLightLeftFront);
 
-	m_enabledSensorTypes.emplace_back(
-		HoloLensForCV::SensorType::VisibleLightRightFront);
+	//m_enabledSensorTypes.emplace_back(
+	//	HoloLensForCV::SensorType::VisibleLightRightFront);
 
-	m_enabledSensorTypes.emplace_back(
-		HoloLensForCV::SensorType::VisibleLightLeftLeft);
+	//m_enabledSensorTypes.emplace_back(
+	//	HoloLensForCV::SensorType::VisibleLightLeftLeft);
 
-	m_enabledSensorTypes.emplace_back(
-		HoloLensForCV::SensorType::VisibleLightRightRight);
+	//m_enabledSensorTypes.emplace_back(
+	//	HoloLensForCV::SensorType::VisibleLightRightRight);
 
 	m_mediaFrameSourceGroupStarted = false;
 	m_isRunning = false;
@@ -176,14 +176,12 @@ void ServerGRPC::Serve()
 	m_cq = builder.AddCompletionQueue();
 	// Assemble server
 	m_server = builder.BuildAndStart();
-	dbg::trace(L"Server listening", server_address.c_str());
 
 	// Instantiate first CallData object to handle incoming requests
-	//new CallData(&m_service, m_cq.get(), ENABLE);
-	//new CallData(&m_service, m_cq.get(), INTRINSICS);
-	//new CallData(&m_service, m_cq.get(), SENSORSTREAM);
-	auto a = new CallData(this, ENABLE);
+	auto a = new CallData(&m_service, m_cq.get(), ENABLE);
 	Proceed(a);
+	auto b = new CallData(&m_service, m_cq.get(), INTRINSICS);
+	Proceed(b);
 }
 
 void ServerGRPC::HandleRpcs()
@@ -191,16 +189,13 @@ void ServerGRPC::HandleRpcs()
 	void* tag;
 	bool ok;
 	// Check completion queue status for any pending request
-	if (m_cq->Next(&tag, &ok))
-	{
-		if (ok)
-		{
-			CallData* cd = static_cast<CallData*>(tag);
-			// Update sensors data for the gRPC app
-			StreamAsync();
-			Proceed(cd);
-		}
-	}
+	dbg::trace(L"Waiting for next event un completion queue...");
+	GPR_ASSERT(m_cq->Next(&tag, &ok));
+	GPR_ASSERT(ok);
+	CallData* cd = static_cast<CallData*>(tag);
+	// Update sensors data for the gRPC app
+	StreamAsync();
+	Proceed(cd);
 }
 
 void ServerGRPC::Proceed(CallData * cd)
@@ -211,23 +206,15 @@ void ServerGRPC::Proceed(CallData * cd)
 	switch (status)
 	{
 	case CREATE:
-		cd->setStatus(PROCESS);
-		if (type == ENABLE)
-			m_service.RequestEnableSensors(&cd->m_context, &cd->m_enableRequest,
-				&cd->m_responderEnable, m_cq.get(), m_cq.get(), cd);
-		else if (type == INTRINSICS)
-			m_service.RequestGetCamIntrinsics(&cd->m_context, &cd->m_sensorRequest,
-				&cd->m_responderIntrinsics, m_cq.get(), m_cq.get(), cd);
-		else if (type == SENSORSTREAM)
-			m_service.RequestSensorStream(&cd->m_context, &cd->m_sensorRequest,
-				&cd->m_writerSensorStreaming, m_cq.get(), m_cq.get(), cd);
+		cd->RegisterRequest(); // Handled internally
 		break;
 	case PROCESS:
-		new CallData(this, type);
-
+		// Create new instance
+		new CallData(cd->m_service, cd->m_cq, type);
 		if (type == ENABLE)
 		{
 			dbg::trace(L"Processing enableSensors request");
+			cd->setStatus(FINISH);
 			if (m_mediaFrameSourceGroupStarted)
 			{
 				dbg::trace(L"Media frame group already started, aborting");
@@ -244,7 +231,6 @@ void ServerGRPC::Proceed(CallData * cd)
 				StartHoloLensMediaFrameSourceGroup();
 				cd->m_responderEnable.Finish(cd->m_enableRequest, grpc::Status::OK, cd);
 			}
-			cd->setStatus(FINISH);
 		}
 		else if (type == INTRINSICS)
 		{
@@ -255,12 +241,18 @@ void ServerGRPC::Proceed(CallData * cd)
 			camIntrinsics.set_cx(3);
 			camIntrinsics.set_cy(4);
 			// Response ready
-			cd->m_responderIntrinsics.Finish(camIntrinsics, grpc::Status::OK, cd);
 			cd->setStatus(FINISH);
+			cd->m_responderIntrinsics.Finish(camIntrinsics, grpc::Status::OK, cd);
 		}
 		else if (type == SENSORSTREAM)
 		{
-			if (m_sensorFrames.empty())
+			
+			if (!m_mediaFrameSourceGroup)
+			{
+				cd->setStatus(FINISH);
+				cd->m_writerSensorStreaming.Finish(grpc::Status::CANCELLED, cd);
+			}
+			else if (m_sensorFrames.empty())
 			{
 				cd->setStatus(FINISH);
 				cd->m_writerSensorStreaming.WriteAndFinish(SensorFrameRPC(),
@@ -302,11 +294,7 @@ void ServerGRPC::Stop()
 }
 
 void ServerGRPC::StreamAsync()
-{
-	dbg::TimerGuard timerGuard(
-		L"ServerGRPC::StreamAsync",
-		30.0 /* minimum_time_elapsed_in_milliseconds */);
-	
+{	
 	m_inProcess = true;
 
 	if (!m_mediaFrameSourceGroupStarted)
@@ -355,10 +343,8 @@ void ServerGRPC::StartHoloLensMediaFrameSourceGroup()
 		{
 			dbg::trace(L"Media frame source group started.");
 			m_mediaFrameSourceGroupStarted = true;
-			// Begin listening to Intrinsics and SensorStream requests
-			auto b = new CallData(this, INTRINSICS);
-			Proceed(b);
-			auto c = new CallData(this, SENSORSTREAM);
+			// Begin listening to SensorStream requests
+			auto c = new CallData(&m_service, m_cq.get(), SENSORSTREAM);
 			Proceed(c);
 		});
 }

@@ -20,13 +20,29 @@ private:
 	class CallData
 	{
 	public:
-		CallData(ServerGRPC^ server, RequestType rt) :
+		CallData(Streamer::AsyncService* service, grpc::ServerCompletionQueue* cq, RequestType rt) :
+			m_service(service),
+			m_cq(cq),
 			m_responderEnable(&m_context),
 			m_responderIntrinsics(&m_context),
 			m_writerSensorStreaming(&m_context),
 			m_status(CREATE),
 			m_type(rt)
 		{}
+
+		void RegisterRequest()
+		{
+			setStatus(PROCESS);
+			if (m_type == ENABLE)
+				m_service->RequestEnableSensors(&m_context, &m_enableRequest,
+					&m_responderEnable, m_cq, m_cq, this);
+			else if (m_type == INTRINSICS)
+				m_service->RequestGetCamIntrinsics(&m_context, &m_sensorRequest,
+					&m_responderIntrinsics, m_cq, m_cq, this);
+			else if (m_type == SENSORSTREAM)
+				m_service->RequestSensorStream(&m_context, &m_sensorRequest,
+					&m_writerSensorStreaming, m_cq, m_cq, this);
+		}
 
 		CallStatus getStatus() { return m_status; }
 
@@ -43,6 +59,8 @@ private:
 		ServerAsyncWriter<SensorFrameRPC> m_writerSensorStreaming;
 		ServerAsyncResponseWriter<SensorListRPC> m_responderEnable;
 
+		Streamer::AsyncService* m_service;
+		grpc::ServerCompletionQueue* m_cq;
 		ServerContext m_context;
 		grpc::WriteOptions m_writeOptions;
 	private:
