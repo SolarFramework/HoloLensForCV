@@ -121,8 +121,8 @@ ServerGRPC::ServerGRPC() :
 	m_isRunning(false)
 {
 	// Sensors to be enabled
-	m_enabledSensorTypes.emplace_back(
-		HoloLensForCV::SensorType::VisibleLightLeftFront);
+	//m_enabledSensorTypes.emplace_back(
+	//	HoloLensForCV::SensorType::VisibleLightLeftFront);
 
 	//m_enabledSensorTypes.emplace_back(
 	//	HoloLensForCV::SensorType::VisibleLightRightFront);
@@ -142,7 +142,7 @@ void ServerGRPC::Run(IBackgroundTaskInstance ^ taskInstance)
 	}
 	if (!m_mediaFrameSourceGroupStarted)
 	{
-		StartHoloLensMediaFrameSourceGroup();
+		//StartHoloLensMediaFrameSourceGroup();
 	}
 
 	dbg::trace(L"Beginning main loop");
@@ -214,14 +214,35 @@ void ServerGRPC::Proceed(CallData * cd)
 			}
 			else
 			{
+				m_multiFrameBuffer = ref new HoloLensForCV::MultiFrameBuffer();
+
+				m_spatialPerception = ref new HoloLensForCV::SpatialPerception();
+
+				m_mediaFrameSourceGroup =
+					ref new HoloLensForCV::MediaFrameSourceGroup(
+						m_mediaFrameSourceGroupType,
+						m_spatialPerception,
+						m_multiFrameBuffer);
+
 				for (NameRPC sensorName : cd->m_enableRequest.sensor())
 				{
 					auto sensorType = ParseNameRPC(sensorName);
+					m_mediaFrameSourceGroup->Enable(sensorType);
 					m_enabledSensorTypes.emplace_back(sensorType);
 					dbg::trace(L"Enable %s", sensorType.ToString()->Data());
 				}
-				StartHoloLensMediaFrameSourceGroup();
-				cd->m_responderEnable.Finish(cd->m_enableRequest, grpc::Status::OK, cd);
+				//StartHoloLensMediaFrameSourceGroup();
+
+				concurrency::create_task(m_mediaFrameSourceGroup->StartAsync()).then(
+					[&]()
+					{
+						dbg::trace(L"Media frame source group started.");
+						m_mediaFrameSourceGroupStarted = true;
+						// Tell the client the sensors are ready
+						cd->m_responderEnable.Finish(cd->m_enableRequest, grpc::Status::OK, cd);
+						// Begin listening to SensorStream requests
+						Proceed(new CallData(&m_service, m_cq.get(), SENSORSTREAM));
+					}).wait();
 			}
 		}
 		else if (type == INTRINSICS)
@@ -295,7 +316,7 @@ void ServerGRPC::Stop()
 			delete m_multiFrameBuffer;
 			m_multiFrameBuffer = nullptr;
 			dbg::trace(L"Stopping mediaFrameSourceGroup");
-		});
+		}).wait();
 }
 
 void ServerGRPC::StreamAsync()
