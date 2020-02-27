@@ -1,8 +1,16 @@
-# StereoStreamer branch
+# HoloLens Sensor Streaming App for SolAR
 
-This branch is originated from this [fork](https://github.com/argo-1/HoloLensForCV/tree/StereoStreamer). It modifies the StreamerVLC sample to stream synchronized sensor frames and poses through a websocket, for further processing on another device. The app can in run in the background, meaning that you can gather sensor data from the HoloLens when using any application on the device.
+This project, forked from [Microsoft/HoloLensForCV](https://github.com/microsoft/HoloLensForCV) has been adapted to be able to stream sensors data (frame/pose pairs) into SolAR using the [SolARModuleHoloLens](https://github.com/SolarFramework/SolARModuleHoloLens) _BuiltInSLAM_ component. A simple client sample can be found [here](https://github.com/SolarFramework/SolARModuleHoloLens/tree/develop/tests/Sample-HoloLens).
 
-Examples for fetching the sensors data are provided in [Samples/py](https://github.com/Minipeps/HoloLensForCV/tree/StereoStreamer/Samples/py).
+It uses the [gRPC framework](https://grpc.io/) to send/receive messages between the server (hosted on the HoloLens) and the client (the SolAR app).
+
+To start the server, compile and launch the StreamerVLC app.
+
+**Note:**
+
+> The codebase for the StreamerVLC app originated from this [fork](https://github.com/argo-1/HoloLensForCV/tree/StereoStreamer). It modifies the StreamerVLC sample to stream synchronized sensor frames and poses through a websocket, for further processing on another device. The app can run in the background, meaning that you can gather sensors data from the HoloLens when using any other application on the device.
+
+Examples for fetching the sensors data using Python (useful for debugging) are provided in [Samples/py](https://github.com/SolarFramework/HoloLensForCV/tree/feature/gRPC/Samples/py).
 
 # Purpose
 
