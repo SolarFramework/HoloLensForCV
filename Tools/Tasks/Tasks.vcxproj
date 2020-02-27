@@ -276,7 +276,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="BackgroundTask.h" />
     <ClInclude Include="ServerGRPC.h" />
-    <ClInclude Include="StreamerServiceImpl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="build\sensorStreaming.grpc.pb.cc" />
@@ -293,7 +292,6 @@
     </ClCompile>
     <ClCompile Include="BackgroundTask.cpp" />
     <ClCompile Include="ServerGRPC.cpp" />
-    <ClCompile Include="StreamerServiceImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\Debugging\Debugging.vcxproj">

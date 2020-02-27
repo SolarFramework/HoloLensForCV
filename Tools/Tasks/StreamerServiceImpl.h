@@ -23,8 +23,7 @@ using sensorStreaming::PoseRPC;
 using sensorStreaming::ImageRPC;
 using sensorStreaming::SensorFrameRPC;
 
-enum RequestType { ENABLE, INTRINSICS, SENSORSTREAM };
-enum CallStatus { CREATE, PROCESS, FINISH };
+
 
 class StreamerServiceImpl final
 {

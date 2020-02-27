@@ -1,13 +1,35 @@
 #pragma once
 
-#include "grpc/grpc.h"
+#include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 
-#include "StreamerServiceImpl.h"
+#include "sensorStreaming.grpc.pb.h"
+
+using grpc::Server;
+using grpc::ServerAsyncResponseWriter;
+using grpc::ServerAsyncWriter;
+using grpc::ServerAsyncReaderWriter;
+using grpc::ServerWriter;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::ServerCompletionQueue;
+using grpc::WriteOptions;
+using sensorStreaming::Streamer;
+using sensorStreaming::SensorListRPC;
+using sensorStreaming::NameRPC;
+using sensorStreaming::MatRPC;
+using sensorStreaming::CameraIntrinsicsRPC;
+using sensorStreaming::PoseRPC;
+using sensorStreaming::ImageRPC;
+using sensorStreaming::SensorFrameRPC;
 
 using namespace Windows::ApplicationModel::Background;
 
+
 namespace Tasks {
+
+enum RequestType { ENABLE, INTRINSICS, SENSORSTREAM };
+enum CallStatus { CREATE, PROCESS, FINISH };
 
 public ref class ServerGRPC sealed : public IBackgroundTask
 {
@@ -20,7 +42,7 @@ private:
 	class CallData
 	{
 	public:
-		CallData(Streamer::AsyncService* service, grpc::ServerCompletionQueue* cq, RequestType rt) :
+		CallData(Streamer::AsyncService* service, ServerCompletionQueue* cq, RequestType rt) :
 			m_service(service),
 			m_cq(cq),
 			m_responderEnable(&m_context),
@@ -28,7 +50,7 @@ private:
 			m_writerSensorStreaming(&m_context),
 			m_status(CREATE),
 			m_type(rt)
-		{}
+		{ }
 
 		void RegisterRequest()
 		{
@@ -60,9 +82,9 @@ private:
 		ServerAsyncResponseWriter<SensorListRPC> m_responderEnable;
 
 		Streamer::AsyncService* m_service;
-		grpc::ServerCompletionQueue* m_cq;
+		ServerCompletionQueue* m_cq;
 		ServerContext m_context;
-		grpc::WriteOptions m_writeOptions;
+		WriteOptions m_writeOptions;
 	private:
 		CallStatus m_status;
 		RequestType m_type;
@@ -79,7 +101,6 @@ private:
 
 	void StreamAsync();
 
-	StreamerServiceImpl m_streamerService;
 	bool m_isRunning;
 	Streamer::AsyncService m_service;
 	std::unique_ptr<ServerCompletionQueue> m_cq;
@@ -97,10 +118,9 @@ private:
 
 	// Sensors data
 	std::vector<HoloLensForCV::SensorFrame^> m_sensorFrames;
+	HoloLensForCV::SensorFrame^ m_currentFrame;
 
-	bool m_inProcess;
-	int m_processedFrames;
-	bool m_handingRpcs;
+	int m_count;
 };
 
 }
