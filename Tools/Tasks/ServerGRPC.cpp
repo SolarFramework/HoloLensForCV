@@ -202,7 +202,7 @@ void ServerGRPC::Proceed(CallData * cd)
 		break;
 	case PROCESS:
 		// Create new instance
-		new CallData(cd->m_service, cd->m_cq, type);
+		Proceed(new CallData(cd->m_service, cd->m_cq, type));
 		if (type == ENABLE)
 		{
 			dbg::trace(L"Processing enableSensors request");
