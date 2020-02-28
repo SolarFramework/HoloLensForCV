@@ -119,31 +119,12 @@ ServerGRPC::ServerGRPC() :
 	m_mediaFrameSourceGroupType(HoloLensForCV::MediaFrameSourceGroupType::HoloLensResearchModeSensors),
 	m_mediaFrameSourceGroupStarted(false),
 	m_isRunning(false)
-{
-	// Sensors to be enabled
-	//m_enabledSensorTypes.emplace_back(
-	//	HoloLensForCV::SensorType::VisibleLightLeftFront);
-
-	//m_enabledSensorTypes.emplace_back(
-	//	HoloLensForCV::SensorType::VisibleLightRightFront);
-
-	//m_enabledSensorTypes.emplace_back(
-	//	HoloLensForCV::SensorType::VisibleLightLeftLeft);
-
-	//m_enabledSensorTypes.emplace_back(
-	//	HoloLensForCV::SensorType::VisibleLightRightRight);
-}
+{ }
 
 void ServerGRPC::Run(IBackgroundTaskInstance ^ taskInstance)
 {
 	if (!m_isRunning)
-	{
 		Serve();
-	}
-	if (!m_mediaFrameSourceGroupStarted)
-	{
-		//StartHoloLensMediaFrameSourceGroup();
-	}
 
 	dbg::trace(L"Beginning main loop");
 
@@ -157,7 +138,6 @@ void ServerGRPC::Run(IBackgroundTaskInstance ^ taskInstance)
 void ServerGRPC::Serve()
 {
 	m_isRunning = true;
-
 	std::string server_address("0.0.0.0:50051");
 
 	ServerBuilder builder;
@@ -180,14 +160,12 @@ void ServerGRPC::HandleRpcs()
 	void* tag;
 	bool ok;
 	// Check completion queue status for any pending request
-	dbg::trace(L"Waiting for next event in completion queue...");
 	GPR_ASSERT(m_cq->Next(&tag, &ok));
 	GPR_ASSERT(ok);
-	dbg::trace(L"%s", tag);
 	CallData* cd = static_cast<CallData*>(tag);
-	// Update sensors data for the gRPC app
+	// Update sensors data
 	StreamAsync();
-	// Process the event on top of the queue
+	// Process the event that has been caught
 	Proceed(cd);
 }
 
@@ -216,7 +194,6 @@ void ServerGRPC::Proceed(CallData * cd)
 			else
 			{
 				m_multiFrameBuffer = ref new HoloLensForCV::MultiFrameBuffer();
-
 				m_spatialPerception = ref new HoloLensForCV::SpatialPerception();
 
 				m_mediaFrameSourceGroup =
@@ -325,7 +302,6 @@ void ServerGRPC::StreamAsync()
 		return;
 
 	m_sensorFrames.clear();
-	m_count = 0;
 	// Read sensor frames
 	for (const auto sensorType : m_enabledSensorTypes)
 	{
@@ -337,38 +313,8 @@ void ServerGRPC::StreamAsync()
 			// Try again
 			m_currentFrame = m_multiFrameBuffer->GetLatestFrame(sensorType);
 		}
-		m_count++;
 		m_sensorFrames.push_back(m_currentFrame);
 	}
-	dbg::trace(L"Updated %i sensors", m_count);
-	return;
-}
-
-void ServerGRPC::StartHoloLensMediaFrameSourceGroup()
-{
-	m_multiFrameBuffer = ref new HoloLensForCV::MultiFrameBuffer();
-
-	m_spatialPerception = ref new HoloLensForCV::SpatialPerception();
-
-	m_mediaFrameSourceGroup =
-		ref new HoloLensForCV::MediaFrameSourceGroup(
-			m_mediaFrameSourceGroupType,
-			m_spatialPerception,
-			m_multiFrameBuffer);
-
-	for (const auto enabledSensorType : m_enabledSensorTypes)
-	{
-		m_mediaFrameSourceGroup->Enable(
-			enabledSensorType);
-	}
-	concurrency::create_task(m_mediaFrameSourceGroup->StartAsync()).then(
-		[&]()
-		{
-			dbg::trace(L"Media frame source group started.");
-			m_mediaFrameSourceGroupStarted = true;
-			// Begin listening to SensorStream requests
-			Proceed(new CallData(&m_service, m_cq.get(), SENSORSTREAM));
-		});
 }
 
 }
