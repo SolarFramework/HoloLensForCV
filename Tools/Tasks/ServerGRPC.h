@@ -106,9 +106,6 @@ private:
 	std::unique_ptr<ServerCompletionQueue> m_cq;
 	std::unique_ptr<Server> m_server;
 
-	// HoloLens sensor streaming
-	void StartHoloLensMediaFrameSourceGroup();
-
 	HoloLensForCV::MediaFrameSourceGroupType m_mediaFrameSourceGroupType;
 	HoloLensForCV::MediaFrameSourceGroup^ m_mediaFrameSourceGroup;
 	bool m_mediaFrameSourceGroupStarted;
