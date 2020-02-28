@@ -183,6 +183,7 @@ void ServerGRPC::HandleRpcs()
 	dbg::trace(L"Waiting for next event in completion queue...");
 	GPR_ASSERT(m_cq->Next(&tag, &ok));
 	GPR_ASSERT(ok);
+	dbg::trace(L"%s", tag);
 	CallData* cd = static_cast<CallData*>(tag);
 	// Update sensors data for the gRPC app
 	StreamAsync();
@@ -231,7 +232,6 @@ void ServerGRPC::Proceed(CallData * cd)
 					m_enabledSensorTypes.emplace_back(sensorType);
 					dbg::trace(L"Enable %s", sensorType.ToString()->Data());
 				}
-				//StartHoloLensMediaFrameSourceGroup();
 
 				concurrency::create_task(m_mediaFrameSourceGroup->StartAsync()).then(
 					[&]()
@@ -330,16 +330,15 @@ void ServerGRPC::StreamAsync()
 	for (const auto sensorType : m_enabledSensorTypes)
 	{
 		m_currentFrame = m_multiFrameBuffer->GetLatestFrame(sensorType);
-		if (m_currentFrame == nullptr)
+		while (m_currentFrame == nullptr)
 		{
-			// Skip this frame's processing, sensor not available
+			// Skip this frame, sensor not available
 			dbg::trace(L"Frame is null for sensor %s", sensorType.ToString()->Data());
+			// Try again
+			m_currentFrame = m_multiFrameBuffer->GetLatestFrame(sensorType);
 		}
-		else
-		{
-			m_count++;
-			m_sensorFrames.push_back(m_currentFrame);
-		}
+		m_count++;
+		m_sensorFrames.push_back(m_currentFrame);
 	}
 	dbg::trace(L"Updated %i sensors", m_count);
 	return;
